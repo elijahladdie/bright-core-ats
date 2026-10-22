@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique(map: "brightcore_admins_email_uq") @db.Text
+  passwordHash String   @map("password_hash") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("brightcore_admins")
+}
+
+model Job {
+  id               Int           @id @default(autoincrement())
+  title            String        @db.Text
+  location         String        @db.Text
+  employmentType   String        @map("employment_type") @db.Text
+  closingDate      DateTime      @map("closing_date") @db.Date
+  summary          String        @db.Text
+  description      String        @db.Text
+  responsibilities String        @db.Text
+  requirements    String        @db.Text
+  status           String        @default("OPEN") @db.Text
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  applications     Application[]
+
+  @@map("brightcore_jobs")
+}
+
+model Application {
+  id             Int      @id @default(autoincrement())
+  jobId          Int      @map("job_id")
+  job            Job      @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "brightcore_applications_job_id_brightcore_jobs_id_fk")
+  fullName       String   @map("full_name") @db.Text
+  email          String   @db.Text
+  phone          String   @db.Text
+  coverNote      String   @default("") @map("cover_note") @db.Text
+  cvObjectPath   String   @map("cv_object_path") @db.Text
+  cvOriginalName String   @map("cv_original_name") @db.Text
+  status         String   @default("PENDING") @db.Text
+  note           String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([jobId, email], map: "brightcore_applications_job_email_uq")
+  @@map("brightcore_applications")
+}
+
+model CvUpload {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  objectPath   String   @unique(map: "brightcore_cv_uploads_object_path_uq") @map("object_path") @db.Text
+  originalName String   @map("original_name") @db.Text
+  declaredSize Int      @map("declared_size")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@map("brightcore_cv_uploads")
+}
