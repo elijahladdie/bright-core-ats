@@ -1,0 +1,548 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: jobs
+    description: Public job listings and applications.
+  - name: admin
+    description: Protected recruitment administration.
+  - name: storage
+    description: Private CV upload and retrieval.
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List open jobs
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, minimum: 1, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 6 }
+      responses:
+        "200":
+          description: Paginated open jobs.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobPage"
+  /jobs/{id}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      summary: Get job details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Job details.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "404":
+          description: Job not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /jobs/{id}/applications:
+    post:
+      operationId: applyToJob
+      tags: [jobs]
+      summary: Submit a candidate application
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationInput"
+      responses:
+        "201":
+          description: Application submitted.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationConfirmation"
+        "400":
+          description: Invalid or closed application.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "409":
+          description: An application already exists for this email and job.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Sign in as an administrator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Authenticated administrator and bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /admin/jobs:
+    get:
+      operationId: listAdminJobs
+      tags: [admin]
+      summary: List all jobs with application counts
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: All recruitment jobs.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminJob"
+    post:
+      operationId: createJob
+      tags: [admin]
+      summary: Create a job posting
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobInput"
+      responses:
+        "201":
+          description: Job created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminJob"
+  /admin/jobs/{id}:
+    put:
+      operationId: updateJob
+      tags: [admin]
+      summary: Update a job posting
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobInput"
+      responses:
+        "200":
+          description: Job updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminJob"
+        "404":
+          description: Job not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /admin/jobs/{id}/close:
+    patch:
+      operationId: closeJob
+      tags: [admin]
+      summary: Close a job to new applications
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Job closed.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminJob"
+        "404":
+          description: Job not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /admin/jobs/{id}/applications:
+    get:
+      operationId: listApplications
+      tags: [admin]
+      summary: List applications for a job
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: All candidate applications for this job.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Application"
+  /admin/applications:
+    get:
+      operationId: listAdminApplications
+      tags: [admin]
+      summary: List applications with optional job and status filters
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: jobId
+          in: query
+          required: true
+          schema: { type: integer, minimum: 1 }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, ACCEPTED, REJECTED]
+      responses:
+        "200":
+          description: Filtered candidate applications.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Application"
+  /admin/applications/{id}:
+    get:
+      operationId: getApplication
+      tags: [admin]
+      summary: Get an application and candidate details
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: Candidate application.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationDetail"
+        "404":
+          description: Application not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /admin/applications/{id}/cv:
+    get:
+      operationId: getApplicationCv
+      tags: [admin]
+      summary: Download an applicant's private CV
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      responses:
+        "200":
+          description: PDF CV, streamed only to an authenticated administrator.
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+        "404":
+          description: Application or CV not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /admin/applications/{id}/status:
+    patch:
+      operationId: updateApplicationStatus
+      tags: [admin]
+      summary: Accept or reject a pending application
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationDecision"
+      responses:
+        "200":
+          description: Application decision saved.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationDetail"
+        "400":
+          description: Application is no longer pending.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Application not found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+  /admin/overview:
+    get:
+      operationId: getAdminOverview
+      tags: [admin]
+      summary: Get application totals and status breakdowns
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Recruitment overview metrics.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
+  /storage/uploads/request-url:
+    post:
+      operationId: requestCvUploadUrl
+      tags: [storage]
+      summary: Request a private upload URL for a candidate CV
+      description: Public candidate endpoint. Only PDF uploads up to 5 MB are accepted; the object remains private and is checked again on application submission.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CvUploadInput"
+      responses:
+        "200":
+          description: Short-lived URL and private object path.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CvUploadResponse"
+        "400":
+          description: Invalid file metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    ErrorEnvelope:
+      type: object
+      properties:
+        error: { type: string }
+        fields:
+          type: object
+          additionalProperties: { type: string }
+      required: [error]
+    Job:
+      type: object
+      required: [id, title, location, employmentType, closingDate, summary, description, responsibilities, requirements, status, createdAt]
+      properties:
+        id: { type: integer }
+        title: { type: string }
+        location: { type: string }
+        employmentType: { type: string }
+        closingDate: { type: string, format: date }
+        summary: { type: string }
+        description: { type: string }
+        responsibilities: { type: string }
+        requirements: { type: string }
+        status: { type: string, enum: [OPEN, CLOSED] }
+        createdAt: { type: string, format: date-time }
+    JobInput:
+      type: object
+      required: [title, location, employmentType, closingDate, summary, description, responsibilities, requirements]
+      properties:
+        title: { type: string, minLength: 3 }
+        location: { type: string, minLength: 2 }
+        employmentType: { type: string, minLength: 2 }
+        closingDate: { type: string, format: date }
+        summary: { type: string, minLength: 10 }
+        description: { type: string, minLength: 10 }
+        responsibilities: { type: string, minLength: 10 }
+        requirements: { type: string, minLength: 10 }
+    JobPage:
+      type: object
+      required: [items, page, limit, total]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Job" }
+        page: { type: integer }
+        limit: { type: integer }
+        total: { type: integer }
+    AdminJob:
+      allOf:
+        - $ref: "#/components/schemas/Job"
+        - type: object
+          required: [applicationCount]
+          properties:
+            applicationCount: { type: integer }
+    ApplicationInput:
+      type: object
+      required: [fullName, email, phone, coverNote, cvObjectPath, cvOriginalName]
+      properties:
+        fullName: { type: string, minLength: 2 }
+        email: { type: string, format: email }
+        phone: { type: string, minLength: 7 }
+        coverNote: { type: string, maxLength: 5000 }
+        cvObjectPath: { type: string, minLength: 1 }
+        cvOriginalName: { type: string, minLength: 1 }
+    Application:
+      type: object
+      required: [id, jobId, fullName, email, phone, coverNote, status, note, createdAt]
+      properties:
+        id: { type: integer }
+        jobId: { type: integer }
+        fullName: { type: string }
+        email: { type: string, format: email }
+        phone: { type: string }
+        coverNote: { type: string }
+        status: { type: string, enum: [PENDING, ACCEPTED, REJECTED] }
+        note: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+    ApplicationDetail:
+      allOf:
+        - $ref: "#/components/schemas/Application"
+        - type: object
+          required: [jobTitle, cvOriginalName]
+          properties:
+            jobTitle: { type: string }
+            cvOriginalName: { type: string }
+    ApplicationConfirmation:
+      type: object
+      required: [id, message]
+      properties:
+        id: { type: integer }
+        message: { type: string }
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, minLength: 1 }
+    LoginResponse:
+      type: object
+      required: [token, email]
+      properties:
+        token: { type: string }
+        email: { type: string, format: email }
+    ApplicationDecision:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [ACCEPTED, REJECTED] }
+        note: { type: string, maxLength: 3000 }
+    AdminOverview:
+      type: object
+      required: [totalApplications, pending, accepted, rejected, openJobs, perJob]
+      properties:
+        totalApplications: { type: integer }
+        pending: { type: integer }
+        accepted: { type: integer }
+        rejected: { type: integer }
+        openJobs: { type: integer }
+        perJob:
+          type: array
+          items:
+            type: object
+            required: [jobId, title, total, pending, accepted, rejected]
+            properties:
+              jobId: { type: integer }
+              title: { type: string }
+              total: { type: integer }
+              pending: { type: integer }
+              accepted: { type: integer }
+              rejected: { type: integer }
+    CvUploadInput:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name: { type: string, minLength: 1 }
+        size: { type: integer, minimum: 1, maximum: 5242880 }
+        contentType: { type: string, enum: [application/pdf] }
+    CvUploadResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL: { type: string, format: uri }
+        objectPath: { type: string }
+
