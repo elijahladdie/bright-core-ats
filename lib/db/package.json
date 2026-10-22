@@ -1,0 +1,25 @@
+{
+  "name": "@workspace/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "node ./scripts/prisma.cjs generate --schema ./prisma/schema.prisma",
+    "migrate:dev": "node ./scripts/prisma.cjs migrate dev --schema ./prisma/schema.prisma",
+    "migrate:deploy": "node ./scripts/prisma.cjs migrate deploy --schema ./prisma/schema.prisma",
+    "migrate:status": "node ./scripts/prisma.cjs migrate status --schema ./prisma/schema.prisma",
+    "migrate:resolve": "node ./scripts/prisma.cjs migrate resolve --schema ./prisma/schema.prisma",
+    "postinstall": "node ./scripts/prisma.cjs generate --schema ./prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "6.19.0",
+    "dotenv": "^18.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.1",
+    "prisma": "6.19.0"
+  }
+}
