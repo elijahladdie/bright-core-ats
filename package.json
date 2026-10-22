@@ -17,6 +17,8 @@
     "preinstall": "node scripts/check-yarn-version.cjs",
     "dev:web": "yarn workspace @workspace/frontend run dev",
     "dev:api": "yarn workspace @workspace/backend run dev",
+    "dev": "concurrently -k -n API,WEB \"yarn dev:api\" \"yarn dev:web\"",
+    "start:local": "yarn db:migrate:deploy && yarn dev",
     "db:generate": "yarn workspace @workspace/db run generate",
     "db:migrate:dev": "yarn workspace @workspace/db run migrate:dev",
     "db:migrate:deploy": "yarn workspace @workspace/db run migrate:deploy",
@@ -31,6 +33,7 @@
     "js-yaml": "4.3.2"
   },
   "devDependencies": {
+    "concurrently": "^10.0.6",
     "prettier": "^3.9.6",
     "typescript": "~5.9.3"
   }

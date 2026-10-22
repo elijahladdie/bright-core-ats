@@ -1,91 +1,49 @@
 # Brightcore Recruitment
 
-Brightcore is a React/Vite recruitment portal backed by an Express API, PostgreSQL, and Prisma.
+Brightcore is a recruitment platform where applicants can browse job opportunities and submit applications with their contact details and CVs without creating an account. Administrators can review applications, manage candidate statuses, and make recruitment decisions.
 
-## Requirements
+## Technology Stack
 
-- Node.js 22.15.1 or newer (Node 22 is the configured runtime)
-- Yarn Classic 1.22.22
-- PostgreSQL
+- **Frontend:** React and Vite
+- **Backend:** Express
+- **Database:** PostgreSQL
+- **ORM:** Prisma
+- **Package Management:** Yarn Workspaces
 
-The repository includes `.nvmrc` for Node version managers.
+## Run Locally
 
-## First-time setup
+**Requirements:** Node.js `22.15.1` or newer, Yarn Classic `1.22.22`, and PostgreSQL.
 
-From the repository root:
+1. Clone the repository and navigate to its root directory.
+2. Install dependencies and configure the environment:
 
-```sh
-cp .env.example .env
-yarn install
-```
+   ```bash
+   cp .env.example .env
+   yarn install
+   ```
 
-Edit `.env` and set `DATABASE_URL` to your PostgreSQL database. Replace the development `SESSION_SECRET` and admin password before using the app outside local development. Keep `.env` private; it is ignored by Git.
+3. Update `.env` with your PostgreSQL `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD`.
+4. Apply database migrations:
 
-CV files are stored locally under `apps/backend/data/cv-uploads` by default when the API runs as a Yarn workspace. Set `CV_UPLOAD_DIR` to choose another path. The local storage directory is ignored by Git.
+   ```bash
+   yarn db:migrate:deploy
+   ```
 
-## Database setup and migrations
+5. Start both the API and frontend:
 
-For a new database, create all tables by running:
+   ```bash
+   yarn dev
+   ```
 
-```sh
-yarn db:migrate:deploy
-```
+6. Open **http://localhost:5173**.
 
-To create and apply a migration while developing a schema change:
+The API health endpoint is available at http://localhost:8080/api/healthz.
 
-```sh
-yarn db:migrate:dev
-```
+## Key Features
 
-To check migration state:
+- Browse available job opportunities.
+- Submit applications and upload CVs without registering.
+- Secure administrator access to submitted applications.
+- Accept or reject candidates and track application statuses.
 
-```sh
-yarn db:migrate:status
-```
-
-This repository includes a baseline migration for the existing Brightcore schema. If your database already has those tables from an earlier `prisma db push`, first verify that its schema matches `lib/db/prisma/schema.prisma`, then mark the baseline as applied:
-
-```sh
-yarn workspace @workspace/db run migrate:resolve --applied 20261022150000_baseline
-yarn db:migrate:deploy
-```
-
-Do not mark the baseline as applied on an empty or differently structured database. `migrate:deploy` applies committed migrations; it does not synchronize arbitrary schema changes.
-
-## Start the API and web app
-
-Run these in separate terminals from the repository root:
-
-```sh
-yarn dev:api
-```
-
-```sh
-yarn dev:web
-```
-
-Open the web app at <http://localhost:5173>. The API health endpoint is <http://localhost:8080/api/healthz>. Vite proxies `/api` requests to the API server during development.
-
-For a local admin login, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` before the first API startup. The development seed also creates sample jobs when the jobs table is empty.
-
-## Production
-
-Build the workspace with `yarn build`. Configure the production environment with `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_PASSWORD`, and a durable `CV_UPLOAD_DIR`. Apply committed migrations with `yarn db:migrate:deploy` as part of the database release process, not as application startup logic.
-
-
-
-### Testing 
-
-- Clone the repository and set up the server following the README instructions.
-- Obtain the `DATABASE_URL` from the email of my submission
-- The admin password is shared with authorized testers via email.
-- Applicants can apply without signing up or creating an account.
-- Only authorized admins can view applications and accept or reject applicants.
-- The hiring team uses the applicant’s submitted phone number to make contact.
-- Shortlisted applicants are notified and receive invitation details.
-- If a challenge is required, the applicant receives an assignment invitation by email.
-
-## Credentials 
-
-ADMIN_EMAIL=admin@brightcore.com
-ADMIN_PASSWORD=password@123
+**Note:** Ensure PostgreSQL is running and the database is configured before starting the application.
