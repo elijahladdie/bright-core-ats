@@ -73,3 +73,19 @@ For a local admin login, set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env` before
 Build the workspace with `yarn build`. Configure the production environment with `DATABASE_URL`, `SESSION_SECRET`, `ADMIN_PASSWORD`, and a durable `CV_UPLOAD_DIR`. Apply committed migrations with `yarn db:migrate:deploy` as part of the database release process, not as application startup logic.
 
 
+
+### Testing 
+
+- Clone the repository and set up the server following the README instructions.
+- Obtain the `DATABASE_URL` from the email of my submission
+- The admin password is shared with authorized testers via email.
+- Applicants can apply without signing up or creating an account.
+- Only authorized admins can view applications and accept or reject applicants.
+- The hiring team uses the applicant’s submitted phone number to make contact.
+- Shortlisted applicants are notified and receive invitation details.
+- If a challenge is required, the applicant receives an assignment invitation by email.
+
+## Credentials 
+
+ADMIN_EMAIL=admin@brightcore.com
+ADMIN_PASSWORD=password@123
