@@ -1,0 +1,37 @@
+{
+  "name": "workspace",
+  "version": "0.0.0",
+  "license": "MIT",
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=22.15.1",
+    "yarn": "1.22.22"
+  },
+  "workspaces": [
+    "apps/*",
+    "lib/*",
+    "lib/integrations/*",
+    "scripts"
+  ],
+  "scripts": {
+    "preinstall": "node scripts/check-yarn-version.cjs",
+    "dev:web": "yarn workspace @workspace/frontend run dev",
+    "dev:api": "yarn workspace @workspace/backend run dev",
+    "db:generate": "yarn workspace @workspace/db run generate",
+    "db:migrate:dev": "yarn workspace @workspace/db run migrate:dev",
+    "db:migrate:deploy": "yarn workspace @workspace/db run migrate:deploy",
+    "db:migrate:status": "yarn workspace @workspace/db run migrate:status",
+    "build": "yarn run typecheck && yarn workspace @workspace/backend run build && yarn workspace @workspace/frontend run build",
+    "typecheck:libs": "tsc --build",
+    "typecheck": "yarn run typecheck:libs && yarn workspace @workspace/backend run typecheck && yarn workspace @workspace/frontend run typecheck && yarn workspace @workspace/scripts run typecheck"
+  },
+  "private": true,
+  "resolutions": {
+    "esbuild": "0.28.2",
+    "js-yaml": "4.3.2"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6",
+    "typescript": "~5.9.3"
+  }
+}
